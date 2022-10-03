@@ -72,24 +72,22 @@ namespace cAlgo.Robots
             canReopenPositionCount++;
             if (double.IsNaN(upperBand))
             {
-                double canReopenRegion = GetReopenRegion(lowerBand, maLine, false);
                 if (longPosition == null) {
                     canReopenPositionCount = 0;
                     ClosePositionsIfExists();
                     OpenTrade(TradeType.Buy);
-                } else if (canReopenPositionCount > reopenPositionBarCount && Bars.Last(1).Close <= canReopenRegion) {
+                } else if (canReopenPositionCount > reopenPositionBarCount && IsInReopenRegion(lowerBand, maLine, true)) {
                     canReopenPositionCount = 0;
                     OpenTrade(TradeType.Buy);
                 }
             }
             else if (double.IsNaN(lowerBand))
             {
-                double canReopenRegion = GetReopenRegion(upperBand, maLine, true);
                 if (shortPosition == null) {
                     canReopenPositionCount = 0;
                     ClosePositionsIfExists();
                     OpenTrade(TradeType.Sell);
-                } else if (canReopenPositionCount > reopenPositionBarCount && Bars.Last(1).Close >= canReopenRegion) {
+                } else if (canReopenPositionCount > reopenPositionBarCount && IsInReopenRegion(upperBand, maLine, false)) {
                     canReopenPositionCount = 0;
                     OpenTrade(TradeType.Sell);
                 }
@@ -129,17 +127,27 @@ namespace cAlgo.Robots
             get { return Symbol.QuantityToVolumeInUnits(Quantity); }
         }
         
-        private double GetReopenRegion(double band, double maLine, bool upper)
-        {
-            if (!upper) {
-                // is lower band (long position opened)
-                double add = (maLine - band) / 2;
-                return band + add;
+        private bool IsInReopenRegion(double band, double maLine, bool isLong) {
+            
+            double insiderLowerBand;
+            double insiderUpperBand;
+            if (isLong) {
+                // lower region band
+                double insiderBand = (maLine - band) / 2;
+                insiderLowerBand = band + insiderBand;
+                insiderUpperBand = band - insiderBand;
+                
             } else {
-                // is upper band (short position opened)
-                double remove = (band - maLine) / 2;
-                return band - remove;
+                // lower region band
+                double insiderBand = (band - maLine) / 2;
+                insiderLowerBand = band - insiderBand;
+                insiderUpperBand = band + insiderBand;
             }
+            return Bars.Last(1).Close <= insiderUpperBand &&  Bars.Last(1).Close >= insiderLowerBand;
+        }
+        
+        private Position GetLongPositions() {
+            return Positions.Find(label, SymbolName, TradeType.Buy);
         }
     }
 }

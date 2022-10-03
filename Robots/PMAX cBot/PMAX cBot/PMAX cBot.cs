@@ -10,8 +10,9 @@ namespace cAlgo.Robots
     [Robot(TimeZone = TimeZones.UTC, AccessRights = AccessRights.None)]
     public class PMAXcBot : Robot
     {
-        [Parameter("Label", Group = "Settings", DefaultValue = "PMAX cBot")]
-        public string label { get; set; }
+        // [Parameter("Label", Group = "Settings", DefaultValue = "PMAX cBot")]
+        // public string label { get; set; }
+        public string label = null;
 
         [Parameter("Quantity (Lots)", Group = "Settings", DefaultValue = 0.1, MinValue = 0.1, Step = 0.1)]
         public double Quantity { get; set; }
@@ -25,10 +26,10 @@ namespace cAlgo.Robots
         [Parameter("End hour", Group = "HourlyTrade", DefaultValue = 12, MinValue = 0, MaxValue = 23)]
         public int EndTradeSession { get; set; }
 
-        [Parameter("Period", Group = "Supertrend", DefaultValue = 10, MinValue = 1, MaxValue = 25, Step = 1)]
+        [Parameter("Period", Group = "Supertrend", DefaultValue = 10, MinValue = 1, Step = 1)]
         public int Period { get; set; }
 
-        [Parameter("Multiplier", Group = "Supertrend", DefaultValue = 8.0, MinValue = 0.1, MaxValue = 25.0, Step = 0.1)]
+        [Parameter("Multiplier", Group = "Supertrend", DefaultValue = 8.0, MinValue = 0.1, Step = 0.1)]
         public double Multiplier { get; set; }
 
         [Parameter("Change ATR Calculation?", Group = "Supertrend", DefaultValue = true)]
@@ -47,7 +48,7 @@ namespace cAlgo.Robots
 
         public Position[] BotPositions
         {
-            get { return Positions.FindAll(label); }
+            get { return Positions.FindAll(label, SymbolName); }
         }
 
         protected override void OnStart()
@@ -59,19 +60,19 @@ namespace cAlgo.Robots
         {
             double lowerBand = _pmax.LowerBand.Last(1);
             double upperBand = _pmax.UpperBand.Last(1);
+            
+            bool isLongSignal = GetSignal(upperBand);
+            bool isShortSignal = GetSignal(lowerBand);
 
-            var longPosition = Positions.Find(label, SymbolName, TradeType.Buy);
-            var shortPosition = Positions.Find(label, SymbolName, TradeType.Sell);
+            bool noLongPosition = Positions.Find(label, SymbolName, TradeType.Buy) == null;
+            bool noShortPosition = Positions.Find(label, SymbolName, TradeType.Sell) == null;
 
-
-            // TODO se tiver perto do band, abre mais uma operação
-
-            if (double.IsNaN(upperBand) && longPosition == null)
+            if (isLongSignal && noLongPosition)
             {
                 ClosePositionsIfExists();
                 OpenTrade(TradeType.Buy);
             }
-            else if (double.IsNaN(lowerBand) && shortPosition == null)
+            else if (isShortSignal && noShortPosition)
             {
                 ClosePositionsIfExists();
                 OpenTrade(TradeType.Sell);
@@ -105,9 +106,14 @@ namespace cAlgo.Robots
                 ClosePosition(position);
             }
         }
+        
         private double VolumeInUnits
         {
             get { return Symbol.QuantityToVolumeInUnits(Quantity); }
+        }
+        
+        private bool GetSignal(double band) {
+            return double.IsNaN(band);
         }
     }
 }
