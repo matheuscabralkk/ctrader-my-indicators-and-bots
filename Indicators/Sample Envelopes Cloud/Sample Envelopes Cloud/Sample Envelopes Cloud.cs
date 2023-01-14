@@ -1,4 +1,4 @@
-﻿using cAlgo.API;
+using cAlgo.API;
 using cAlgo.API.Indicators;
 
 namespace cAlgo
@@ -26,7 +26,7 @@ namespace cAlgo
 
         protected override void Initialize()
         {
-            _movingAverage = Indicators.MovingAverage(Bars.ClosePrices, Period, MovingAverageType.Simple);
+            _movingAverage = Indicators.MovingAverage(Bars.ClosePrices, Period, MovingAverageType.VIDYA);
         }
 
         public override void Calculate(int index)

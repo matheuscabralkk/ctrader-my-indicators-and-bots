@@ -8,13 +8,13 @@ using cAlgo.Indicators;
 namespace cAlgo.Robots
 {
     [Robot(TimeZone = TimeZones.UTC, AccessRights = AccessRights.None)]
-    public class PMAXcBot : Robot
+    public class PMAXcBotv2 : Robot
     {
-        // [Parameter("Label", Group = "Settings", DefaultValue = "PMAX cBot")]
+        // [Parameter("Label", Group = "Settings", DefaultValue = "PMAX cBot v2")]
         // public string label { get; set; }
         public string label = null;
 
-        [Parameter("Quantity (Lots)", Group = "Settings", DefaultValue = 0.1, MinValue = 0.1, Step = 0.1)]
+        [Parameter("Quantity (Lots)", Group = "Settings", DefaultValue = 0.1, MinValue = 0.01, Step = 0.1)] 
         public double Quantity { get; set; }
 
         [Parameter("Only trade within certain hours?", Group = "HourlyTrade", DefaultValue = false)]
@@ -29,9 +29,6 @@ namespace cAlgo.Robots
         [Parameter("Period", Group = "Supertrend", DefaultValue = 10, MinValue = 1, Step = 1)]
         public int Period { get; set; }
 
-        [Parameter("Multiplier", Group = "Supertrend", DefaultValue = 8.0, MinValue = 0.1, Step = 0.1)]
-        public double Multiplier { get; set; }
-
         [Parameter("Change ATR Calculation?", Group = "Supertrend", DefaultValue = true)]
         public bool SmoothedAtr { get; set; }
 
@@ -44,7 +41,7 @@ namespace cAlgo.Robots
         [Parameter("MA Lenght", Group = "Moving Average", DefaultValue = 200, MinValue = 1, Step = 1)]
         public int MALenght { get; set; }
 
-        private PMAXIndicator _pmax;
+        private PMAXIndicatorv2 _pmax;
         
         bool hadLongPosOpen = false;            
         bool hadShortPosOpen = false;
@@ -56,7 +53,7 @@ namespace cAlgo.Robots
 
         protected override void OnStart()
         {
-            _pmax = Indicators.GetIndicator<PMAXIndicator>(Period, Multiplier, SmoothedAtr, MAType, SourceSeries, MALenght);
+            _pmax = Indicators.GetIndicator<PMAXIndicatorv2>(Period, SmoothedAtr, MAType, SourceSeries, MALenght);
         }
 
         protected override void OnBar()
@@ -66,12 +63,17 @@ namespace cAlgo.Robots
             
             bool isLongSignal = GetSignal(lowerBand);
             bool isShortSignal = GetSignal(upperBand);
+            
+            Print("-------");
+            Print(isLongSignal);
+            Print(isShortSignal);
 
             bool noLongPosition = Positions.Find(label, SymbolName, TradeType.Buy) == null;
             bool noShortPosition = Positions.Find(label, SymbolName, TradeType.Sell) == null;
             
 
             //TODO ao abrir uma posição, cancela todas as outras posições pendentes
+            // TODO ma lenght 0; then calcular MA indo pra cima/baixo
 
             if (isLongSignal && noLongPosition && !hadLongPosOpen)
             {
